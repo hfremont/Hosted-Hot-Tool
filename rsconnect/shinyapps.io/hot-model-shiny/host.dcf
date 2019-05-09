@@ -1,0 +1,10 @@
+name: host
+title:
+username:
+account: hot-model-shiny
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 920389
+bundleId: 2072839
+url: https://hot-model-shiny.shinyapps.io/host/
+when: 1557419939.74434
