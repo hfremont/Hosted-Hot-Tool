@@ -104,7 +104,7 @@ getShinyMap <- function(inputSurvey = NULL,
     dir.create("./data/inst/temp_files", showWarnings = FALSE)
     
     # Check if local results file exists -- if so, load. If not, compute, load, and store locally.
-    filename <- paste0( ".data/inst/temp_files/", metric, mode, inputSurvey, ".rds")
+    filename <- paste0( "./data/inst/temp_files/", metric, mode, inputSurvey, ".rds")
     
     # Add progress bar message "Analyzing..." to metric data load process
     withProgress(message = 'Analyzing...', value = 4, {
