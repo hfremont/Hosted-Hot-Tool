@@ -3,4 +3,6 @@
 data
 data/.Rhistory
 .Rhistory
-log/
+log/rsconnect/
+rsconnect/*
+rsconnect
