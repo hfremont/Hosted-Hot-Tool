@@ -15,7 +15,7 @@ getAppDescription <- function(){
                   The health benefit is estimated as the change in the annual mortality rate associated
                   with a change in active transportation. We may apply the HOT model to any location
                   where one finds the requisite data and can wrangle them into the specified form (found on the next page.)"
-  
+
   return(description)
 }
 
@@ -27,7 +27,7 @@ getMetricDescription <- function(){
                        "Intensity: calculates the mean and standard deviation of physical activity among active travelers.",
                        "Duration: returns average trip length (in minutes) by mode (walking or cycling).",
                        "Trips: shows average number trips per day by mode.", sep = "\n")
-  
+
   return(description)
 }
 
@@ -40,72 +40,72 @@ getShinyMap <- function(inputSurvey = NULL,
                         inputScenario = NULL,
                         inputAuthor = NULL,
                         inputIncome = NULL){
-  
+
   # Load TS based on user selection
   switch(inputSurvey,
-         "London" = { ts <- readRDS(file = paste0("./data/inst/LTDS.ts.rds")) },
-         "France" = { ts <- readRDS(file = paste0("./data/inst/ENTD.fr.ts.rds")) },
+         "London" = { ts <- readRDS(file = paste0("./data/LTDS.ts.rds")) },
+         "France" = { ts <- readRDS(file = paste0("./data/ENTD.fr.ts.rds")) },
          "USA" = {}, # update later once USA integrated
          "Custom" = { ts <- inputCustom })
-  
+
   # Load GIS
   switch(inputSurvey,
-         "London" = { GIS.df <- readRDS(file = paste0("./data/inst/LondonGIS.rds")) },
-         "France" = { GIS.df <- readRDS(file = paste0("./data/inst/FranceGIS.rds")) },
+         "London" = { GIS.df <- readRDS(file = paste0("./data/LondonGIS.rds")) },
+         "France" = { GIS.df <- readRDS(file = paste0("./data/FranceGIS.rds")) },
          "USA" = {}, # update later once USA integrated
          "Custom" = {}) # update later once custom/GIS developed
-  
+
   # Translate input into proper strings for processing
   if( inputMetric %in% c("Duration", "Trips") ){ mode <- tolower(inputMode) }else{ mode <- NULL} # need lowercase mode if provided
   if( inputMetric != "CRA" ){
     metric <- tolower(inputMetric) # need lowercase string for non-CRA metrics
     scen <- NULL # need scen set to null for non-CRA metrics
-  }else{ 
+  }else{
     metric <- inputMetric
-    switch(inputScenario, 
+    switch(inputScenario,
            "Zero" = { scen <- "rho.s.1" },
            "Full" = { scen <- "rho.s.2" },
            "Custom" = {})} # update later once custom scenario integrated
-  
+
   # CRA treated separately
   if( metric == "CRA"){
-    
+
     # Load CRA.ts results, if available. If unavailable, generate.
     switch(inputSurvey,
-           "London" = { filename <- paste0("./data/inst/craTSLondon.rds") },
-           "France" = { filename <- paste0("./data/inst/craTSFrance.rds") },
+           "London" = { filename <- paste0("./data/craTSLondon.rds") },
+           "France" = { filename <- paste0("./data/craTSFrance.rds") },
            "USA" = {}, # update later once USA integrated
            "Custom" = { filename <- inputCustom })
-    
+
     # Add progress bar message "Analyzing..." to CRA load process
     withProgress(message = 'Analyzing...', value = 2, {
       if( file.exists(filename) ){ craTS <- readRDS(file = filename) }else{ craTS <- CRA.ts(ts) ; saveRDS(craTS, file = filename) }
     })
-    
+
     # Filter CRA.ts results by author
     data.df <- craTS %>% dplyr::filter(author == inputAuthor)
-    
+
     # If author is Lear, filter results by income
     if( inputAuthor == "Lear" ){ data.df <- data.df %>% dplyr::filter(income == inputIncome) }
-    
+
     # Join results with GIS
     map.df <- left_join(GIS.df, data.df, by = "location")
-    
+
     # Generate map with progress bar message "Mapping.."
     withProgress(message = 'Mapping...', value = 3, {
       getMap(map.df, metric, mode = mode, scenario = scen, author = inputAuthor, income = inputIncome, interactive = FALSE)
     })
   }
-  
+
   # Everything besides CRA, but written such that this works for CRA in future
-  else{ 
-    
+  else{
+
     # Create temp file directory (if does not already exist) -- reinstalling HOT package will remove the directory without error
-    dir.create("./data/inst/temp_files", showWarnings = FALSE)
-    
+    dir.create("./data/temp_files", showWarnings = FALSE)
+
     # Check if local results file exists -- if so, load. If not, compute, load, and store locally.
-    filename <- paste0( "./data/inst/temp_files/", metric, mode, inputSurvey, ".rds")
-    
+    filename <- paste0( "./data/temp_files/", metric, mode, inputSurvey, ".rds")
+
     # Add progress bar message "Analyzing..." to metric data load process
     withProgress(message = 'Analyzing...', value = 4, {
       if( file.exists(filename) ){ data.df <- readRDS(file = filename) }
@@ -113,7 +113,7 @@ getShinyMap <- function(inputSurvey = NULL,
     })
     # Join results with GIS
     map.df <- left_join(GIS.df, data.df, by = "location")
-    
+
     # Generate map with progress bar message "Mapping.."
     withProgress(message = 'Mapping...', value = 5, {
       getMap(map.df, metric, mode = mode, scenario = scen, author = inputAuthor, income = inputIncome, interactive = FALSE)
@@ -124,11 +124,11 @@ getShinyMap <- function(inputSurvey = NULL,
 
 # This function clears all generated files from the HOT Shiny app
 cleanup <- function(){
-  
+
   # Clear locally generated files
-  filenames <- list.files(paste0("./data/inst/temp_files/"), full.names = TRUE)
+  filenames <- list.files(paste0("./data/temp_files/"), full.names = TRUE)
   foo <- file.remove(filenames)
-  
+
   # # Retaining CRA-related cleanup code for future development
   # if( file.exists(paste0(getHOTdirectory(), "/craTSLondon.rds")) ){ file.remove(paste0(getHOTdirectory(), "/craTSLondon.rds")) }
   # if( file.exists(paste0(getHOTdirectory(), "/craTSFrance.rds")) ){ file.remove(paste0(getHOTdirectory(), "/craTSFrance.rds")) }
